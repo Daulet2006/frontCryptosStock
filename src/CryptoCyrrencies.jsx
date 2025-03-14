@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { Menu, Spin } from "antd";
+import { Menu, Spin, Input } from "antd";
 import axios from "axios";
 import CryptoCurrencyCard from "./components/CryptoCurrencyCard";
 import Nav from "./components/NavBar.jsx";
-import { useNavigate } from "react-router-dom";
 
-export const CryptoCyrrencies = () => {
+export const CryptoCurrencies = () => {
   const [currencies, setCurrencies] = useState([]);
+  const [filteredCurrencies, setFilteredCurrencies] = useState([]);
   const [currencyId, setCurrencyId] = useState(null);
   const [currencyData, setCurrencyData] = useState(null);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchCryptoCurrencies = async () => {
     try {
@@ -18,23 +18,13 @@ export const CryptoCyrrencies = () => {
         "http://127.0.0.1:5000/cryptocurrencies/"
       );
       const currenciesResponse = response.data;
-      const menuItems = [
-        {
-          key: "g1",
-          label: (
-            <span className="font-semibold text-gray-400">
-              List of Crypto Currencies
-            </span>
-          ),
-          type: "group",
-          children: currenciesResponse.map((c) => ({
-            key: c.id.toString(),
-            label: c.name,
-          })),
-        },
-      ];
+      const menuItems = currenciesResponse.map((c) => ({
+        key: c.id.toString(),
+        label: c.name,
+      }));
 
       setCurrencies(menuItems);
+      setFilteredCurrencies(menuItems); // Initially show all
       if (currenciesResponse.length > 0) {
         setCurrencyId(currenciesResponse[0].id);
       }
@@ -59,6 +49,15 @@ export const CryptoCyrrencies = () => {
     }
   };
 
+  const handleSearch = (e) => {
+    const query = e.target.value.toLowerCase();
+    setSearchQuery(query);
+    const filtered = currencies.filter((currency) =>
+      currency.label.toLowerCase().includes(query)
+    );
+    setFilteredCurrencies(filtered);
+  };
+
   useEffect(() => {
     fetchCryptoCurrencies();
   }, []);
@@ -76,10 +75,28 @@ export const CryptoCyrrencies = () => {
       <Nav />
       <div className="flex">
         <div className="w-[220px] text-white h-screen overflow-y-auto p-2 shadow-lg">
+          <Input
+            placeholder="Search by name"
+            value={searchQuery}
+            onChange={handleSearch}
+            className="mb-2"
+            allowClear
+          />
           <Menu
             onClick={onClick}
             mode="inline"
-            items={currencies}
+            items={[
+              {
+                key: "g1",
+                label: (
+                  <span className="font-semibold text-gray-400">
+                    List of Crypto Currencies
+                  </span>
+                ),
+                type: "group",
+                children: filteredCurrencies,
+              },
+            ]}
             defaultOpenKeys={["g1"]}
             className="bg-gray-800"
           />
@@ -97,4 +114,4 @@ export const CryptoCyrrencies = () => {
   );
 };
 
-export default CryptoCyrrencies;
+export default CryptoCurrencies;
